@@ -161,20 +161,18 @@ export default {
 
   beforeDestroy() {
       clearInterval(this.timer);
-    if (this.stream) {
-      this.stream.getTracks().forEach((track) => {
-        track.stop();
-      });
-    }
-  },
-  destroyed() {
-    api.get("http://localhost:8080/api/video/close_video",{
-      headers: {
-        "content-type": "multipart/form-data"
+      if (this.stream) {
+        this.stream.getTracks().forEach((track) => {
+          track.stop();
+        });
       }
-    }).then(res=>{
-      console.log("退出关闭视频")
-    })
+      api.get("http://localhost:8080/api/video/close_video",{
+          headers: {
+              "content-type": "multipart/form-data"
+          }
+      }).then(res=>{
+          console.log("退出关闭视频")
+      })
   }
 };
 </script>

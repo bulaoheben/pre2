@@ -166,8 +166,6 @@ export default {
                 track.stop();
             });
         }
-    },
-    destroyed() {
         api.get("http://localhost:8080/api/video/close_video",{
             headers: {
                 "content-type": "multipart/form-data"
