@@ -56,10 +56,12 @@ export default {
             timer:null,
             faceVisible: true,
             imageUrl:"",
+            time:"",
         };
     },
     mounted() {
         this.initializeCamera();
+        this.time = this.getCurrentDateTime();
         this.refresh();
         this.timer = setInterval(this.refresh, 40 * 1000);
     },
@@ -102,8 +104,6 @@ export default {
                 });
         },
         refresh(){
-            var date = new Date();
-            var time = this.getCurrentDateTime();
             // 传递当前时间
             api.get("http://localhost:8080/api/event/getEventsAfterDate",{
                 headers: {
