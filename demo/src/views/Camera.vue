@@ -141,20 +141,24 @@ export default {
         if(obj==null){
             console.log("图片为空");
             alert("本事件图片为空")
+        }else {
+            this.imageUrl=obj
+            this.dialogVisible=true
         }
-      if(this.form.ID){
-        api.POST(`http://localhost:8080/api/video/get_pic`, {obj}).then(res=>{
-          console.log(res)
-          if(res.code=='200'){
-            this.$message({
-              type:"success",
-              message:"查看成功"
-            })
-            this.imageUrl=res.data();
-            this.dialogVisible=true;
-          }
-        })
-      }
+
+      // if(this.form.ID){
+      //   api.POST(`http://localhost:8080/api/video/get_pic`, {obj}).then(res=>{
+      //     console.log(res)
+      //     if(res.code=='200'){
+      //       this.$message({
+      //         type:"success",
+      //         message:"查看成功"
+      //       })
+      //       this.imageUrl=res.data();
+      //       this.dialogVisible=true;
+      //     }
+      //   })
+      // }
     },
   },
   watch: {
