@@ -38,7 +38,6 @@
 </template>
 
 <script>
-import axios from 'axios';
 import api from "@/api";
 
 export default {
@@ -110,7 +109,7 @@ export default {
                     "content-type": "application/json"
                 },
                 params:{
-                    event_date:time
+                    event_date:this.time
                 }
             }).then(res=>{
                 this.tableData=res.data
@@ -158,21 +157,22 @@ export default {
             }
         },
     },
-
-    beforeDestroy() {
-        clearInterval(this.timer);
-        if (this.stream) {
-            this.stream.getTracks().forEach((track) => {
-                track.stop();
-            });
-        }
-        api.get("http://localhost:8080/api/video/close_video",{
-            headers: {
-                "content-type": "multipart/form-data"
+    watch: {
+        $route(to, from) {
+            clearInterval(this.timer);
+            if (this.stream) {
+                this.stream.getTracks().forEach((track) => {
+                    track.stop();
+                });
             }
-        }).then(res=>{
-            console.log("退出关闭视频")
-        })
+            api.get("http://localhost:8080/api/video/close_video",{
+                headers: {
+                    "content-type": "multipart/form-data"
+                }
+            }).then(res=>{
+                console.log("退出关闭视频")
+            })
+        }
     }
 };
 </script>
