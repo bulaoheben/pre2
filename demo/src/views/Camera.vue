@@ -2,15 +2,10 @@
   <div style="display: flex">
     <video ref="videoElement" autoplay></video>
     <div v-if="countdown > 0" class="countdown">{{ countdown }}</div>
-    <el-button @click="capture" style="height: 40px">截图</el-button>
 
     <el-table
         :data="tableData"
         style="width: 30%">
-      <el-table-column
-          prop="event_type"
-          label="事件类型">
-      </el-table-column>
       <el-table-column
           prop="event_date"
           label="日期"
@@ -30,15 +25,6 @@
       </el-table-column>
       <el-table-column label="操作" width="280">
         <template #default="scope">
-          <el-button
-              size="mini"
-              type="primary"
-              @click="handleEdit(scope.row)">编辑</el-button>
-
-          <el-button
-              size="mini"
-              type="danger"
-              style="margin-left: 5px" @click="handleDelete(scope.$index,scope.row)">删除</el-button>
           <el-button size="mini" @click="check(scope.row)">查看截图</el-button>
         </template>
       </el-table-column>
@@ -62,12 +48,13 @@ export default {
       total:0,
       pageSize:10,
       tableData: [],
+      timer:null,
     };
   },
   mounted() {
     this.initializeCamera();
     this.refresh();
-    var intervalId = setInterval(this.refresh, 30 * 1000);
+    this.timer = setInterval(this.refresh, 40 * 1000);
   },
   methods: {
     async initializeCamera() {
@@ -119,23 +106,9 @@ export default {
           event_date:time
         }
       }).then(res=>{
-        console.log(111,res)
+        this.tableData=res.data
+        console.log("this.tableData",this.tableData)
       })
-      /*获取信息*/
-      api.get("http://localhost:8080/api/event/getAllEvents",{
-        headers: {
-          "content-type": "multipart/form-data"
-        },
-        params:{
-          page:this.currentPage,
-          per_page:this.pageSize,
-          search:this.search
-        }
-      }).then(res=>{
-        this.tableData=res.data.items
-        console.log(this.tableData)
-      })
-
     },
     getCurrentDateTime() {
       const currentDate = new Date();
@@ -174,6 +147,7 @@ export default {
   },
 
   beforeDestroy() {
+      clearInterval(this.timer);
     if (this.stream) {
       this.stream.getTracks().forEach((track) => {
         track.stop();
