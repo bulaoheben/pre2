@@ -28,9 +28,11 @@
       <el-table-column label="操作" width="280">
         <template #default="scope">
           <el-button size="mini" @click="check(scope.row.pic_url)">查看截图</el-button>
-          <el-dialog :visible="dialogVisible" @close="dialogVisible = false">
-              <el-image :src="imageUrl" fit="contain"></el-image>
-          </el-dialog>
+            <el-dialog title="图片" v-model="dialogImgVisible">
+                <div>
+                    <img  style="width: 50vw;height: 400px;object-fit:contain;padding: 20px;display: inline-block"  :src="base64" alt="">
+                </div>
+            </el-dialog>
         </template>
       </el-table-column>
     </el-table>
@@ -56,13 +58,14 @@ export default {
       faceVisible: true,
       imageUrl:"",
       time:"",
+      dialogImgVisible:false
     };
   },
   mounted() {
     this.initializeCamera();
     this.time = this.getCurrentDateTime();
     this.refresh();
-    this.timer = setInterval(this.refresh, 40 * 1000);
+    this.timer = setInterval(this.refresh, 40*1000);
   },
   methods: {
     async initializeCamera() {
@@ -142,23 +145,43 @@ export default {
             console.log("图片为空");
             alert("本事件图片为空")
         }else {
-            this.imageUrl=obj
-            this.dialogVisible=true
+            api.post(`http://localhost:8080/api/video/get_pic?image_name=`+obj, {}, {
+                responseType: 'blob',
+                headers: {
+                    "Content-Type": 'application/octet-stream'
+                }
+            }).then(res => {
+                console.log(res)
+                if(res.code=='200'){
+                    this.blobTobase64(res).then((base64string) => {
+                        console.log(base64string, '#################')
+                        that.base64 = base64string
+                        that.dialogImgVisible= true
+                    }).catch((err) => {
+                        console.error(err)
+                    })
+                    if (res.code == '200') {
+                        this.$message({
+                            type: "success",
+                            message: "查看成功",
+                        })
+                    }
+                }
+            })
         }
-
-      // if(this.form.ID){
-      //   api.POST(`http://localhost:8080/api/video/get_pic`, {obj}).then(res=>{
-      //     console.log(res)
-      //     if(res.code=='200'){
-      //       this.$message({
-      //         type:"success",
-      //         message:"查看成功"
-      //       })
-      //       this.imageUrl=res.data();
-      //       this.dialogVisible=true;
-      //     }
-      //   })
-      // }
+    },
+    blobTobase64(blob) {
+        return new Promise((res, rej) => {
+            const reader = new FileReader()
+            reader.onloadend = function () {
+                const base = reader.result
+                res(base)
+            }
+            reader.onerror = function () {
+                rej(new Error('error'))
+            }
+            reader.readAsDataURL(blob)
+        })
     },
   },
   watch: {
