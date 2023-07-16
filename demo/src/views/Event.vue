@@ -21,7 +21,7 @@
           width="132"
           sortable>
         <template #default="scope">
-          {{formeDateFun(scope.row.event_date) }}
+          {{ formeDateFun(scope.row.event_date) }}
         </template>
       </el-table-column>
       <el-table-column
@@ -40,16 +40,23 @@
           <el-button
               size="mini"
               type="primary"
-              @click="handleEdit(scope.row)">编辑</el-button>
+              @click="handleEdit(scope.row)">编辑
+          </el-button>
 
           <el-button
               size="mini"
               type="danger"
-              style="margin-left: 5px" @click="handleDelete(scope.$index,scope.row)">删除</el-button>
+              style="margin-left: 5px" @click="handleDelete(scope.$index,scope.row)">删除
+          </el-button>
           <el-button size="mini" @click="check(scope.row)">查看截图</el-button>
         </template>
       </el-table-column>
     </el-table>
+    <el-dialog title="图片" v-model="dialogImgVisible">
+      <div>
+        <img  style="width: 50vw;height: 400px;object-fit:contain;padding: 20px;display: inline-block"  :src="base64" alt="">
+      </div>
+    </el-dialog>
     <div style="padding:10px">
       <el-pagination
           @size-change="handleSizeChange"
@@ -60,7 +67,7 @@
           layout="total, sizes, prev, pager, next, jumper"
           :total="total">
       </el-pagination>
-      <el-dialog title="提示"  v-model="dialogVisible"  width="30%">
+      <el-dialog title="提示" v-model="dialogVisible" width="30%">
         <el-form :model="form" label-width="120px">
           <el-form-item label="事件类型">
             <el-input v-model="form.event_type"></el-input>
@@ -87,146 +94,176 @@
         </span>
       </el-dialog>
     </div>
+
   </div>
 </template>
 
 <script>
 
 import api from "@/api";
+import Base64 from "base-64";
 
 export default {
   data() {
     return {
-      search:'',
-      form:{},
-      dialogVisible:false,
-      currentPage:1,
-      total:0,
-      pageSize:10,
+      dialogImgVisible: false,
+      base64: '',
+      search: '',
+      form: {},
+      dialogVisible: false,
+      currentPage: 1,
+      total: 0,
+      pageSize: 10,
       tableData: [],
     }
   },
-  created(){
+  created() {
     this.load()
   },
-  methods:{
-    load(){
-      api.get("http://localhost:8080/api/event/getAllEvents",{
+  methods: {
+    load() {
+      api.get("http://localhost:8080/api/event/getAllEvents", {
         headers: {
           "content-type": "multipart/form-data"
         },
-        params:{
-          page:this.currentPage,
-          per_page:this.pageSize,
-          search:this.search
+        params: {
+          page: this.currentPage,
+          per_page: this.pageSize,
+          search: this.search
         }
-      }).then(res=>{
-        console.log(111,res)
-        this.tableData=res.data.items
-        this.total=res.data.total_items || 0
+      }).then(res => {
+        console.log(111, res)
+        this.tableData = res.data.items
+        this.total = res.data.total_items || 0
       })
     },
-    check(row){
-      const image_name=row.pic_url;
-        api.post(`http://localhost:8080/api/video/get_pic`, {image_name}).then(res=>{
-          console.log(res)
-          if(res.code=='200'){
-            this.$message({
-              type:"success",
-              message:"查看成功"
+    blobTobase64(blob) {
+      return new Promise((res, rej) => {
+        const reader = new FileReader()
+        reader.onloadend = function () {
+          const base = reader.result
+          res(base)
+        }
+        reader.onerror = function () {
+          rej(new Error('error'))
+        }
+        reader.readAsDataURL(blob)
+      })
+    },
+    check(row) {
+      let that = this
+      const image_name = row.pic_url;
+      api.post(`http://localhost:8080/api/video/get_pic?image_name=` + image_name, {}, {
+        responseType: 'blob',
+        headers: {
+          "Content-Type": 'application/octet-stream'
+        }
+      }).then(res => {
+            console.log(res)
+            this.blobTobase64(res).then((base64string) => {
+              console.log(base64string, '#################')
+              that.base64 = base64string
+              that.dialogImgVisible= true
+            }).catch((err) => {
+              console.error(err)
             })
+            if (res.code == '200') {
+              this.$message({
+                type: "success",
+                message: "查看成功",
+              })
+            }
           }
-        })
-
+      )
     },
-    handleSizeChange(per_page){
-      this.pageSize=per_page
+    handleSizeChange(per_page) {
+      this.pageSize = per_page
       this.load()
     },
-    handleCurrentChange(page){
-      this.currentPage=page
+    handleCurrentChange(page) {
+      this.currentPage = page
       this.load()
     },
-    formeDateFun(time){
+    formeDateFun(time) {
       let d = new Date(time);
-      let year=d.getFullYear();
-      let mounce=d.getMonth() + 1;
-      let day=d.getDate()
-      let str=`${year}-${ mounce>9?mounce:'0'+mounce}-${day>9?day:'0'+day}`;
+      let year = d.getFullYear();
+      let mounce = d.getMonth() + 1;
+      let day = d.getDate()
+      let str = `${year}-${mounce > 9 ? mounce : '0' + mounce}-${day > 9 ? day : '0' + day}`;
       return str;
     },
-    setchFun(){
-      if(this.search){
+    setchFun() {
+      if (this.search) {
         api.get(`http://localhost:8080/api/event/getEvent/${this.search}`, {}
-        ).then(res=>{
-          console.log(111,res)
-          this.tableData=[res.data]
-          this.total=1
+        ).then(res => {
+          console.log(111, res)
+          this.tableData = [res.data]
+          this.total = 1
         })
-      }else{
+      } else {
         this.load()
       }
     },
-    add(){
-      this.dialogVisible=true
-      this.form={}
+    add() {
+      this.dialogVisible = true
+      this.form = {}
     },
-    save(){
-      let formDate=new FormData()
-      formDate.append('id',this.form.ID);
-      formDate.append('event_type',this.form.event_type);
-      formDate.append('event_date',this.form.event_date);
-      formDate.append('event_location',this.form.event_location);
-      formDate.append('event_desc',this.form.event_desc);
-      formDate.append('pic_url',this.form.pic_url);
+    save() {
+      let formDate = new FormData()
+      formDate.append('id', this.form.ID);
+      formDate.append('event_type', this.form.event_type);
+      formDate.append('event_date', this.form.event_date);
+      formDate.append('event_location', this.form.event_location);
+      formDate.append('event_desc', this.form.event_desc);
+      formDate.append('pic_url', this.form.pic_url);
       // formDate.append('birthday',this.form.birthday);
-      if(this.form.ID){
-        api.put(`http://localhost:8080/api/event/updateEvent/${this.form.ID}`, formDate).then(res=>{
+      if (this.form.ID) {
+        api.put(`http://localhost:8080/api/event/updateEvent/${this.form.ID}`, formDate).then(res => {
           console.log(res)
-          if(res.code=='200'){
+          if (res.code == '200') {
             this.$message({
-              type:"success",
-              message:"更新成功"
+              type: "success",
+              message: "更新成功"
             })
-          }else{
+          } else {
             this.$message({
-              type:"error",
-              message:"更新失败"
+              type: "error",
+              message: "更新失败"
             })
           }
           this.load()
-          this.dialogVisible=false
+          this.dialogVisible = false
         })
-      }
-      else{
-        api.post("http://localhost:8080/api/event/addEvent",formDate,{
+      } else {
+        api.post("http://localhost:8080/api/event/addEvent", formDate, {
           headers: {
             "content-type": "multipart/form-data"
-          }}).then(res=>{
+          }
+        }).then(res => {
           console.log(res)
-          if(res.code=='200'){
+          if (res.code == '200') {
             this.$message({
-              type:"success",
-              message:"新增成功"
+              type: "success",
+              message: "新增成功"
             })
-          }else{
+          } else {
             this.$message({
-              type:"error",
-              message:"新增失败"
+              type: "error",
+              message: "新增失败"
             })
           }
           this.load()
-          this.dialogVisible=false
+          this.dialogVisible = false
         })
       }
     },
-    handleEdit(row){
-      let obj =JSON.parse(JSON.stringify(row))
-      obj.birthday =this.formeDateFun(obj.birthday);
-      this.form=obj;
-      this.dialogVisible=true
+    handleEdit(row) {
+      let obj = JSON.parse(JSON.stringify(row))
+      obj.birthday = this.formeDateFun(obj.birthday);
+      this.form = obj;
+      this.dialogVisible = true
     },
-    handleDelete(index,row){
+    handleDelete(index, row) {
       this.$confirm(
           '确定要删除吗？',
           {
@@ -235,25 +272,25 @@ export default {
             type: 'warning',
           }
       ).then(() => {
-        api.delete(`http://localhost:8080/api/event/deleteEvent/${this.form.ID}`,{data:requestData},{
+        api.delete(`http://localhost:8080/api/event/deleteEvent/${this.form.ID}`, {data: requestData}, {
           headers: {
             "content-type": "multipart/form-data"
           }
-        }).then(res=>{
-          if(res.code=='200'){
+        }).then(res => {
+          if (res.code == '200') {
             this.$message({
-              type:"success",
-              message:"删除成功"
+              type: "success",
+              message: "删除成功"
             })
-          }else{
+          } else {
             this.$message({
-              type:"error",
-              message:"删除失败"
+              type: "error",
+              message: "删除失败"
             })
           }
           this.load()
         })
-      }).catch(()=>{
+      }).catch(() => {
         console.log('取消')
       })
     }
