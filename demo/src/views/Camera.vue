@@ -1,7 +1,9 @@
 <template>
   <div style="display: flex">
-    <video ref="videoElement" autoplay></video>
-    <div v-if="countdown > 0" class="countdown">{{ countdown }}</div>
+      <div>
+          <img v-show="faceVisible" style="display: block;-webkit-user-select: none;margin: auto;"
+               src="http://127.0.0.1:5000/video/video_feed" height="500" width="800">
+      </div>
 
     <el-table
         :data="tableData"
@@ -25,7 +27,10 @@
       </el-table-column>
       <el-table-column label="操作" width="280">
         <template #default="scope">
-          <el-button size="mini" @click="check(scope.row)">查看截图</el-button>
+          <el-button size="mini" @click="check(scope.row.pic_url)">查看截图</el-button>
+          <el-dialog :visible="dialogVisible" @close="dialogVisible = false">
+              <el-image :src="imageUrl" fit="contain"></el-image>
+          </el-dialog>
         </template>
       </el-table-column>
     </el-table>
@@ -49,6 +54,8 @@ export default {
       pageSize:10,
       tableData: [],
       timer:null,
+      faceVisible: true,
+      imageUrl:"",
     };
   },
   mounted() {
@@ -130,16 +137,22 @@ export default {
       let str=`${year}-${ mounce>9?mounce:'0'+mounce}-${day>9?day:'0'+day}`;
       return str;
     },
-    check(){
-      const image_name=this.image_name;
+    check(obj){
+        console.log("111",obj)
+        if(obj==null){
+            console.log("图片为空");
+            alert("本事件图片为空")
+        }
       if(this.form.ID){
-        api.POST(`http://localhost:8080/api/video/get_pic`, {image_name}).then(res=>{
+        api.POST(`http://localhost:8080/api/video/get_pic`, {obj}).then(res=>{
           console.log(res)
           if(res.code=='200'){
             this.$message({
               type:"success",
               message:"查看成功"
             })
+            this.imageUrl=res.data();
+            this.dialogVisible=true;
           }
         })
       }
